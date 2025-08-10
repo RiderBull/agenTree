@@ -33,20 +33,51 @@ export class Task {
   }
 
   public getSystemPrompt(): string {
+    const qualityRules = `
+  Quality standards:
+  - Aim for production-ready results, not demos or placeholders.
+  - Prefer working, end-to-end deliverables with clear instructions to run.
+  - Handle edge cases and failure modes; include sensible defaults and validation.
+  - Keep changes reversible and minimal-risk; document assumptions and trade-offs.
+  - Write concise, maintainable outputs; avoid unnecessary boilerplate.
+  - If something cannot be completed fully, clearly mark gaps and propose next steps.`;
 
-    let prompt = `Your task: ${this.description}
+    const decompositionRules = `
+  Decomposition rules:
+  - First, list the minimal set of subtasks to achieve the goal.
+  - For each subtask, decide: can I complete this directly, or is it large/uncertain enough to warrant a child agent?
+  - If it needs a child agent, create it with createAgent and pass only the required tools and context.
+  - One agent per atomic subtask: do not create a generalist child to handle multiple or all tasks. Each child owns exactly one clearly defined subtask.
+  - When creating a child, explicitly state the expected deliverables/output format and success criteria in its task or systemPrompt.
+  - Child agents follow the same logic (may spawn subagents up to maxDepth).`;
 
-      IMPORTANT : At the beginning and between each step, make a short sentence of what you are doing, and what you need to do next. Dont use a tool without explaining what you are doing and why. (1 line max)
-      When you have completed all your work, use the stopAgent tool to return your final result.`;
+    const operatingRules = `
+  Operating rules:
+  - Before each action, write one short line explaining what you do next and why.
+  - Don’t use a tool without a one-line justification.
+  - Prefer precision and focus; avoid redundant steps.`;
 
+    const verificationRules = `
+  Verification before completion:
+  - Before calling stopAgent, verify your outputs meet the requested deliverables and success criteria.
+  - Where feasible, run quick tests or smoke checks using available tools (e.g., run scripts, validate file contents, basic runtime checks).
+  - If issues are found, adjust and re-verify until acceptable or you’ve reached reasonable diminishing returns.
+  - If verification isn’t possible, explain why, list residual risks, and provide concrete next steps for manual validation.
+  - In your final result, briefly summarize what you verified and the outcome.`;
 
-    if (this.systemPrompt) {
-      prompt = `${this.systemPrompt} 
-      IMPORTANT : At the beginning and between each step, make a short sentence of what you are doing, and what you need to do next. Dont use a tool without explaining what you are doing and why. (1 line max)
-      When you have completed all your work, use the stopAgent tool to return your final result.`;
-    }
+    const header = this.systemPrompt
+      ? `${this.systemPrompt}`
+      : `You are a hierarchical planner-executor. Your task: ${this.description}`;
 
-    return prompt;
+    return `${header}
+
+${decompositionRules}
+
+${operatingRules}
+
+${verificationRules}
+
+${qualityRules}`;
   }
 
   public getUserPrompt(): string {

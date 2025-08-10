@@ -47,8 +47,8 @@ const agent = new Agent({
   task: "Use the calculator tool to add 25 and 17, then multiply the result by 3.",
   tools: [calculatorTool],
   config: {
-    apiKey: process.env.OPENAI_KEY_API,
-    model: "gpt-4o-mini",
+  apiKey: process.env.OPENAI_API_KEY,
+  model: "gpt-5",
     maxDepth: 2,
     outputFile: true,
     streaming: true,

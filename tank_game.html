@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tank Game</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #88cc88; font-family: sans-serif; }
+  canvas { display: block; margin: 0 auto; background: #77aa77; }
+  #hud { position: absolute; top: 10px; left: 10px; color: white; font-size: 16px; }
+  #startScreen, #gameOverScreen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); color: white; display: flex;
+    flex-direction: column; justify-content: center; align-items: center;
+    font-size: 24px; z-index: 10;
+  }
+  button { font-size: 20px; padding: 10px 20px; margin-top: 20px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="startScreen">
+  <div>Tank Game</div>
+  <div>Controls: W/S - forward/back, A/D - strafe, Q/E - rotate, Mouse - aim, Click - shoot</div>
+  <button id="startButton">Start Game</button>
+</div>
+<div id="gameOverScreen" style="display:none;">
+  <div>Game Over</div>
+  <div id="finalScore"></div>
+  <button id="restartButton">Restart</button>
+</div>
+<div id="hud" style="display:none;">Health: 100 | Score: 0 | Ammo: ∞</div>
+<canvas id="gameCanvas" width="800" height="600" style="display:none;"></canvas>
+
+<!-- Audio elements -->
+<audio id="shootSound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=" preload="auto"></audio>
+<audio id="powerUpSound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=" preload="auto"></audio>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+const startScreen = document.getElementById('startScreen');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const finalScoreText = document.getElementById('finalScore');
+const startButton = document.getElementById('startButton');
+const restartButton = document.getElementById('restartButton');
+const shootSound = document.getElementById('shootSound');
+const powerUpSound = document.getElementById('powerUpSound');
+
+let gameRunning = false;
+
+// Game state
+let tank = {};
+let score = 0;
+let keys = {};
+let bullets = [];
+let powerUps = [];
+const powerUpTypes = ['health', 'speed', 'rapidFire'];
+
+function initGame() {
+  tank = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    angle: 0,
+    turretAngle: 0,
+    speed: 2,
+    health: 100,
+    maxHealth: 100,
+    width: 40,
+    height: 20,
+    ammo: Infinity,
+    reloadTime: 500,
+    lastShot: 0,
+    powerUps: { speed: 0, rapidFire: 0 },
+  };
+  score = 0;
+  keys = {};
+  bullets = [];
+  powerUps = [];
+}
+
+window.addEventListener('keydown', e => { if(gameRunning) keys[e.key.toLowerCase()] = true; });
+window.addEventListener('keyup', e => { if(gameRunning) keys[e.key.toLowerCase()] = false; });
+
+canvas.addEventListener('mousemove', e => {
+  if(!gameRunning) return;
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  tank.turretAngle = Math.atan2(mouseY - tank.y, mouseX - tank.x);
+});
+
+canvas.addEventListener('click', e => {
+  if(!gameRunning) return;
+  const now = Date.now();
+  if (now - tank.lastShot >= tank.reloadTime) {
+    if (tank.ammo > 0) {
+      bullets.push({
+        x: tank.x + Math.cos(tank.turretAngle) * tank.width / 2,
+        y: tank.y + Math.sin(tank.turretAngle) * tank.width / 2,
+        angle: tank.turretAngle,
+        speed: 5,
+        size: 6,
+      });
+      tank.lastShot = now;
+      if (tank.ammo !== Infinity) tank.ammo--;
+      shootSound.currentTime = 0;
+      shootSound.play();
+    }
+  }
+});
+
+function spawnPowerUp() {
+  if(!gameRunning) return;
+  const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+  powerUps.push({
+    x: Math.random() * (canvas.width - 40) + 20,
+    y: Math.random() * (canvas.height - 40) + 20,
+    type,
+    size: 20,
+  });
+}
+
+let powerUpInterval;
+
+function startGame() {
+  initGame();
+  gameRunning = true;
+  startScreen.style.display = 'none';
+  gameOverScreen.style.display = 'none';
+  hud.style.display = 'block';
+  canvas.style.display = 'block';
+  powerUpInterval = setInterval(spawnPowerUp, 10000);
+  requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  gameRunning = false;
+  clearInterval(powerUpInterval);
+  hud.style.display = 'none';
+  canvas.style.display = 'none';
+  finalScoreText.textContent = `Final Score: ${score}`;
+  gameOverScreen.style.display = 'flex';
+}
+
+startButton.onclick = startGame;
+restartButton.onclick = startGame;
+
+function update() {
+  if(!gameRunning) return;
+  let moveSpeed = tank.speed;
+  if (tank.powerUps.speed > 0) moveSpeed *= 1.5;
+
+  if (keys['w']) {
+    tank.x += Math.cos(tank.angle) * moveSpeed;
+    tank.y += Math.sin(tank.angle) * moveSpeed;
+  }
+  if (keys['s']) {
+    tank.x -= Math.cos(tank.angle) * moveSpeed;
+    tank.y -= Math.sin(tank.angle) * moveSpeed;
+  }
+  if (keys['a']) {
+    tank.x += Math.cos(tank.angle - Math.PI / 2) * moveSpeed;
+    tank.y += Math.sin(tank.angle - Math.PI / 2) * moveSpeed;
+  }
+  if (keys['d']) {
+    tank.x += Math.cos(tank.angle + Math.PI / 2) * moveSpeed;
+    tank.y += Math.sin(tank.angle + Math.PI / 2) * moveSpeed;
+  }
+  if (keys['q']) {
+    tank.angle -= 0.05;
+  }
+  if (keys['e']) {
+    tank.angle += 0.05;
+  }
+
+  tank.x = Math.min(Math.max(tank.x, tank.width / 2), canvas.width - tank.width / 2);
+  tank.y = Math.min(Math.max(tank.y, tank.height / 2), canvas.height - tank.height / 2);
+
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += Math.cos(b.angle) * b.speed;
+    b.y += Math.sin(b.angle) * b.speed;
+    if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+      bullets.splice(i, 1);
+    }
+  }
+
+  for (let i = powerUps.length - 1; i >= 0; i--) {
+    const p = powerUps[i];
+    const dx = tank.x - p.x;
+    const dy = tank.y - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < (tank.width / 2 + p.size / 2)) {
+      if (p.type === 'health') {
+        tank.health = Math.min(tank.health + 30, tank.maxHealth);
+      } else if (p.type === 'speed') {
+        tank.powerUps.speed = 10000;
+      } else if (p.type === 'rapidFire') {
+        tank.powerUps.rapidFire = 10000;
+        tank.reloadTime = 200;
+      }
+      powerUps.splice(i, 1);
+      score += 10;
+      powerUpSound.currentTime = 0;
+      powerUpSound.play();
+    }
+  }
+
+  if (tank.powerUps.speed > 0) {
+    tank.powerUps.speed -= 16;
+  }
+  if (tank.powerUps.rapidFire > 0) {
+    tank.powerUps.rapidFire -= 16;
+  } else {
+    tank.reloadTime = 500;
+  }
+
+  tank.health -= 0.05;
+  if(tank.health <= 0) {
+    endGame();
+  }
+
+  hud.textContent = `Health: ${Math.floor(tank.health)} | Score: ${score} | Ammo: ${tank.ammo === Infinity ? '∞' : tank.ammo}`;
+}
+
+function drawTank(x, y, angle, turretAngle) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillStyle = '#4A90E2';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.fillRect(-20, -10, 40, 20);
+  ctx.strokeRect(-20, -10, 40, 20);
+  ctx.rotate(turretAngle - angle);
+  ctx.fillStyle = '#357ABD';
+  ctx.fillRect(0, -5, 30, 10);
+  ctx.strokeRect(0, -5, 30, 10);
+  ctx.restore();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  powerUps.forEach(p => {
+    ctx.fillStyle = p.type === 'health' ? 'red' : p.type === 'speed' ? 'yellow' : 'cyan';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.stroke();
+  });
+
+  drawTank(tank.x, tank.y, tank.angle, tank.turretAngle);
+
+  ctx.fillStyle = 'orange';
+  bullets.forEach(b => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function gameLoop() {
+  if(gameRunning) {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+}
+</script>
+</body>
+</html>

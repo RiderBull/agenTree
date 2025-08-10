@@ -55,7 +55,7 @@ const agent = new Agent({
   task: "Research latest developments in quantum computing",
   tools: [webSearchTool],
   maxDepth: 3,
-  model: "gpt-4o-mini",
+  model: "gpt-5",
   apiKey: process.env.OPENAI_API_KEY,
   outputFile: true
 });
@@ -66,6 +66,53 @@ const result = await agent.execute();
 → [More examples in documentation](https://remenby31.github.io/agenTree/examples/)
 
 ## Architecture
+
+### How it works (runtime lifecycle)
+
+1) Construction
+- Validates `apiKey` and `model`, creates a Task, resolves tools (objects or by name via `ToolRegistry`).
+- Initializes the LLM client (`OpenAIClient`) and, if `outputFile` is true, a `StreamingOutputManager` to write logs/reports under `.agentree/`.
+- Emits `agentCreated`.
+
+2) Context → Prompts
+- `Task.loadContext()` loads files/URLs/text via `Context.loadContext`.
+- System prompt = default (or your `systemPrompt`) with an instruction to finalize via `stopAgent`.
+- User prompt = task description + lists of context keys (file paths, URLs, text snippets).
+
+3) Main loop
+- Computes available tools (your tools + built-ins: `createAgent` if depth < `maxDepth`, and `stopAgent`).
+- Emits `llmCall`, then calls the LLM once per step.
+- Non‑streaming: `llmClient.chat(...)` returns `content` and optional `tool_calls`.
+- Streaming: accumulates chunks; reconstructs fragmented tool calls (keeps index→id mapping, validates JSON args).
+- Pushes the assistant message into the transcript and records it.
+- If tool calls exist → executes them (see below). If not and there is content → stops with that content as the final result.
+
+4) Tool calls
+- Emits `toolCallStarted` and later `toolCallCompleted` per call (with `duration`, `toolOutput` or `toolError`).
+- Built‑ins:
+  - `createAgent(params)`: spawns a child Agent (inherits config/output settings), enforces `maxDepth`, forwards child events to the parent, waits for child completion, returns a summary string.
+  - `stopAgent({ result, success? })`: marks the agent as completed.
+- User tools: validated by Zod (via the `tool(...)` helper) and executed; results/errors are appended as `tool` messages so the LLM can continue.
+
+5) Completion & errors
+- On `stopAgent`, sets `isCompleted` and stores the `AgentResult` with `children` results.
+- Emits `agentCompleted` and finalizes the Markdown/JSON outputs. Any thrown error emits `agentError` and is recorded.
+
+6) Output & events
+- Outputs (when enabled): `agent-report.md`, `conversation.md`, `execution-log.json`, `metadata.json`, plus child folders for child agents.
+- Events you can subscribe to: `agentCreated/Started/Completed/Error`, `contextLoaded`, `llmCall`, `toolCallStarted/Completed`, `toolCalls` (batch, legacy), `streamChunk` (if streaming), `childCreated`.
+
+Tips & pitfalls
+- API key is required; model defaults exist but can be overridden.
+- Passing tools by object auto‑registers them for children; passing by name requires prior registration.
+- `writeFile` refuses to overwrite unless `overwrite=true`.
+- Streaming tool calls only kept if arguments parse as valid JSON.
+- `maxDepth` caps recursion; `createAgent` throws if exceeded.
+
+Extend quickly
+- Create tools with `tool({ name, description, parameters: z.object(...), execute })` and pass them in `tools: [myTool]` (or register and pass by name).
+- Use `defaultTools` for file/search/bash utilities.
+- Enable `streaming: true` to receive `streamChunk` updates; keep `outputFile: true` for reports.
 
 ### Built-in Tools
 
@@ -182,7 +229,7 @@ const agent = new Agent({
   
   // Optional LLM configuration
   baseUrl: "https://api.openai.com/v1",  // LLM endpoint (default)
-  model: "gpt-4",                   // Model name (default: gpt-4)
+  model: "gpt-5",                   // Model name (default: gpt-5)
   apiKey: process.env.OPENAI_API_KEY,    // API key (required)
   outputFile: true,                 // Generate reports (default: true)
   outputFolder: ".agentree",        // Output directory (default)

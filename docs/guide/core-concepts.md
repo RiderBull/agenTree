@@ -191,6 +191,16 @@ Each agent receives a system prompt and instructions from its parent, defining i
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Quality Standards
+
+All agents and subagents are instructed to produce production-grade outputs:
+- Build working, end-to-end deliverables (not demos or placeholders)
+- Handle edge cases and include minimal validation and sensible defaults
+- Keep outputs maintainable and documented with short usage notes
+- Clearly mark any remaining gaps and propose concrete next steps
+
+This expectation is embedded directly in the system prompt so children inherit it automatically, even when a role-specific systemPrompt is provided.
+
 ---
 
 ## 5. Events & Monitoring: Transparent Execution

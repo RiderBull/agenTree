@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tank Battle Game</title>
+    <style>
+        body {
+            margin: 0;
+            background: #222;
+            color: #eee;
+            font-family: Arial, sans-serif;
+            user-select: none;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin: 20px auto;
+            background: #444;
+            border: 3px solid #666;
+        }
+        canvas {
+            display: block;
+            background: #222;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+        }
+        #instructions {
+            width: 800px;
+            margin: 10px auto;
+            font-size: 14px;
+            color: #ccc;
+            line-height: 1.4;
+        }
+        .health-bar {
+            width: 150px;
+            height: 20px;
+            background: #555;
+            border: 2px solid #333;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+        .health-fill {
+            height: 100%;
+            background: #4caf50;
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div id="playerHealth" class="health-bar"><div class="health-fill"></div></div>
+            <div id="score">Score: 0</div>
+        </div>
+    </div>
+    <div id="instructions">
+        <p><strong>Controls:</strong> Arrow keys to move, Spacebar to shoot.</p>
+        <p>Destroy enemy tanks to score points. Avoid getting hit!</p>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

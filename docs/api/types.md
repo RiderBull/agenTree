@@ -22,7 +22,7 @@ interface AgentTreeConfig {
 ```typescript
 {
   baseUrl: 'https://api.openai.com/v1',
-  model: 'gpt-4',
+  model: 'gpt-5',
   maxDepth: 5,
   outputFile: true,
   outputFolder: '.agentree',
@@ -56,7 +56,7 @@ const agentConfig: AgentConfig = {
   context: ["./data.csv", "Focus on trends"],
   tools: [csvTool, analysisTool],
   config: {
-    model: "gpt-4",
+  model: "gpt-5",
     apiKey: process.env.OPENAI_API_KEY
   }
 };
@@ -347,7 +347,8 @@ interface CreateAgentParams {
   name: string;               // Child agent name
   task: string;               // Task description for child
   context?: string[];         // Context to pass to child
-  tools?: string[];           // Tool names child should access
+  tools: string[];            // Tool names child should access (use ["default"] for all registered)
+  systemPrompt?: string;      // Optional custom system prompt for the child agent
 }
 ```
 
@@ -511,7 +512,7 @@ type AgentEventType =
 ```typescript
 const DEFAULT_CONFIG: Required<AgentTreeConfig> = {
   baseUrl: 'https://api.openai.com/v1',
-  model: 'gpt-4',
+  model: 'gpt-5',
   maxDepth: 5,
   outputFile: true,
   outputFolder: '.agentree',

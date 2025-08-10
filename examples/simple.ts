@@ -1,10 +1,11 @@
 import { Agent, tool } from '../src'; // Adjust the import path as necessary
+import 'dotenv/config';
 import { z } from 'zod';
 
 // Lire la clé API depuis la variable d'environnement
-const apiKey = process.env.OPENAI_KEY_API || '';
+const apiKey = process.env.OPENAI_API_KEY || '';
 if (!apiKey) {
-  throw new Error('OPENAI_KEY_API non définie dans les variables d\'environnement');
+  throw new Error('OPENAI_API_KEY non définie dans les variables d\'environnement');
 }
 
 // Créer un outil calculatrice
@@ -45,7 +46,7 @@ const agent = new Agent({
   task: "Use the calculator tool to add 25 and 17, then use it again to multiply the result by 3. Show the calculations.",
   tools: [calculatorTool],
   apiKey,
-  model: "gpt-4.1-mini",
+  model: "gpt-5",
   maxDepth: 2,
   outputFile: false,
   streaming: false,

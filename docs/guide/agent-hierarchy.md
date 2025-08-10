@@ -62,7 +62,8 @@ The parent uses the `createAgent` tool (automatically available):
     "name": "market-researcher",
     "task": "Research current market conditions for our product category",
     "context": ["./product-specs.md", "Focus on competitors and pricing"],
-    "tools": ["web_search", "readFile"]
+  "tools": ["web_search", "readFile"],
+  "systemPrompt": "You are a rigorous market researcher. Be objective, cite sources, and provide concise bullet-point findings."
   }
 }
 ```
@@ -78,12 +79,28 @@ const childAgent = new Agent({
   task: "Research current market conditions for our product category",
   context: ["./product-specs.md", "Focus on competitors and pricing"],
   tools: ["web_search", "readFile"], // Tool names resolved from registry
+  systemPrompt: "You are a rigorous market researcher. Be objective, cite sources, and provide concise bullet-point findings.",
   parentId: "parent-agent-id",
   depth: 1,
   maxDepth: 4,
   config: inheritedConfig
 });
 ```
+
+## Role-Specific Children
+
+You can steer child behavior like recruiting a specialist on a team:
+
+- Tester: systemPrompt: "You are a skeptical QA tester. Try to break things. Prefer edge cases and precise repro steps."
+- Builder: systemPrompt: "You are a pragmatic builder. Ship small increments, verify, then iterate."
+- Researcher: systemPrompt: "You are a meticulous researcher. Cross-verify facts and cite sources."
+
+The framework merges your custom systemPrompt with the built-in hierarchical rules so children still plan and can spawn their own subagents when appropriate.
+
+### Deliverables & Verification
+
+- When creating a child, the parent should state the expected deliverables/output format and success criteria in the task or systemPrompt.
+- Each agent must verify its work before calling stopAgent (quick tests, smoke checks, or validations when possible). If something can’t be verified, it should explain why and propose next steps.
 
 ## Depth Control
 
@@ -189,6 +206,7 @@ agent.on('agentCompleted', (data) => {
 - **Clear boundaries**: Each subtask should be well-defined
 - **Minimal dependencies**: Reduce inter-child communication
 - **Logical grouping**: Related subtasks under same parent
+- **One agent per atomic subtask**: Don’t spawn a single child to handle multiple or all tasks; create focused children, one per subtask.
 
 ## Output Structure
 

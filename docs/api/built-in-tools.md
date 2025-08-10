@@ -17,7 +17,8 @@ interface CreateAgentParams {
   name: string;               // Child agent name
   task: string;               // Task description for child
   context?: string[];         // Context to pass to child
-  tools?: string[];           // Tool names child should have access to
+  tools: string[];            // Tool names child should have access to (use ["default"] to grant all registered)
+  systemPrompt?: string;      // Optional role/system prompt that steers the child (e.g., tester, builder)
 }
 ```
 
@@ -32,7 +33,8 @@ interface CreateAgentParams {
       "./data/sales-data.csv",
       "Focus on quarterly trends and seasonal patterns"
     ],
-    "tools": ["readFile", "calculateStats"]
+    "tools": ["readFile", "calculateStats"],
+    "systemPrompt": "You are a meticulous data analyst. Be skeptical, validate assumptions, and explain anomalies clearly."
   }
 }
 ```
@@ -42,6 +44,7 @@ interface CreateAgentParams {
 - Child inherits parent's configuration
 - Tools are resolved from ToolRegistry
 - Context is loaded for child agent
+- If provided, `systemPrompt` is applied to the child's system message (and merged with hierarchy rules)
 - Parent waits for child completion
 
 **Returns:** String describing child agent creation and execution result

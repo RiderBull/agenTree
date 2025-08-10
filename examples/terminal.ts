@@ -2,11 +2,12 @@
 //   npx tsx examples/terminal.ts "your task here"
 
 import { Agent } from '../src/core/Agent';
+import 'dotenv/config';
 import { defaultTools } from '../src/tools/defaults';
 
-const apiKey = process.env.OPENAI_KEY_API || '';
+const apiKey = process.env.OPENAI_API_KEY || '';
 if (!apiKey) {
-  console.error('OPENAI_KEY_API is not set in environment variables');
+  console.error('OPENAI_API_KEY is not set in environment variables');
   process.exit(1);
 }
 
@@ -104,7 +105,7 @@ const agent = new Agent({
   task,
   tools: defaultTools,
   apiKey,
-  model: 'gpt-4.1-mini',
+  model: 'gpt-5',
   outputFile: false,
   streaming: true,
   maxDepth: 1

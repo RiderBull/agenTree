@@ -1,0 +1,14 @@
+Explosion Animation Plan for Tank Game:
+
+1. Style: Cartoonish, bright orange and yellow colors with a fading effect.
+2. Frames: 8 frames showing an expanding explosion with a bright core and fading edges.
+3. Size: 64x64 pixels per frame.
+4. Format: PNG frames to be compiled into a sprite sheet or GIF.
+
+Python Script Outline:
+- Use PIL to create images.
+- Draw expanding circles with gradient transparency.
+- Save frames as PNG.
+- Instructions to compile frames into sprite sheet or GIF using imageio or similar.
+
+This approach allows customization and easy integration into the game engine.

@@ -64,7 +64,7 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     
     // Initialize configuration parameters with defaults
     this.baseUrl = agentConfig.baseUrl || 'https://api.openai.com/v1';
-    this._model = agentConfig.model || 'gpt-4';
+  this._model = agentConfig.model || 'gpt-5';
     this.apiKey = agentConfig.apiKey || '';
     this.outputFile = agentConfig.outputFile ?? true;
     this.outputFolder = agentConfig.outputFolder || '.agentree';
@@ -88,8 +88,15 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     // Handle both Tool[] and string[] for tools
     const configTools = agentConfig.tools || [];
     if (configTools.length > 0 && typeof configTools[0] === 'string') {
-      // Tools provided as string names - resolve from registry
-      this.toolNames = configTools as string[];
+      // Tools provided as string names - allow 'default' alias to expand to all registered tools
+      const requestedNames = configTools as string[];
+      const expandedNames = requestedNames.flatMap((name) =>
+        name === 'default' ? ToolRegistry.list() : [name]
+      );
+      // Deduplicate while preserving order
+      const seen = new Set<string>();
+      this.toolNames = expandedNames.filter((n) => (seen.has(n) ? false : (seen.add(n), true)));
+      // Resolve from registry
       this.tools = this.toolNames
         .map(name => ToolRegistry.get(name))
         .filter((tool): tool is Tool => tool !== undefined);
@@ -429,7 +436,7 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     }
     
     // Clean tool names - remove invalid prefixes
-    const cleanedTools = params.tools.map(toolName => {
+    const cleanedToolsRaw = params.tools.map(toolName => {
       // Remove common invalid prefixes
       if (toolName.startsWith('functions.')) {
         return toolName.replace('functions.', '');
@@ -439,6 +446,10 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       }
       return toolName;
     });
+    // Expand 'default' alias to all registered tool names
+    const cleanedTools = cleanedToolsRaw.flatMap((name) =>
+      name === 'default' ? ToolRegistry.list() : [name]
+    );
     
     // Get parent output path for child
     const parentPath = this.outputManager?.getOutputPath();

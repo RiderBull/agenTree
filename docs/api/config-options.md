@@ -28,7 +28,7 @@ interface AgentTreeConfig {
 ```typescript
 const defaultConfig: AgentTreeConfig = {
   baseUrl: 'https://api.openai.com/v1',
-  model: 'gpt-4',
+  model: 'gpt-5',
   maxDepth: 5,
   outputFile: true,
   outputFolder: '.agentree',
@@ -65,7 +65,7 @@ baseUrl: 'http://localhost:11434/v1'
 #### model
 
 **Type:** `string`  
-**Default:** `'gpt-4'`  
+**Default:** `'gpt-5'`  
 **Description:** LLM model name to use for all agents
 
 ```typescript
@@ -261,7 +261,7 @@ const agent = new Agent({
 const getConfig = (): AgentTreeConfig => {
   return {
     baseUrl: process.env.LLM_BASE_URL || 'https://api.openai.com/v1',
-    model: process.env.LLM_MODEL || 'gpt-4',
+  model: process.env.LLM_MODEL || 'gpt-5',
     apiKey: process.env.OPENAI_API_KEY || process.env.LLM_API_KEY,
     maxDepth: parseInt(process.env.AGENTREE_MAX_DEPTH || '5'),
     streaming: process.env.AGENTREE_STREAMING === 'true',
@@ -572,7 +572,7 @@ if (env === 'production') {
 | `OPENAI_API_KEY` | `string` | - | OpenAI API key (primary) |
 | `LLM_API_KEY` | `string` | - | LLM API key (fallback) |
 | `LLM_BASE_URL` | `string` | `https://api.openai.com/v1` | LLM endpoint URL |
-| `LLM_MODEL` | `string` | `gpt-4` | Model name |
+| `LLM_MODEL` | `string` | `gpt-5` | Model name |
 | `AGENTREE_MAX_DEPTH` | `number` | `5` | Maximum hierarchy depth |
 | `AGENTREE_STREAMING` | `boolean` | `false` | Enable streaming |
 | `AGENTREE_OUTPUT_FILE` | `boolean` | `true` | Generate output files |
